@@ -31,8 +31,8 @@ public class Rentals {
     @Column(name = "returning_rentals")
     private String returningRentals;
 
-    @Column
-    private byte[] status;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @ManyToOne
     @JoinColumn(name = "return_agency_id", nullable = false)

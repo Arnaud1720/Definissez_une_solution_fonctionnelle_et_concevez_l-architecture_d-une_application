@@ -9,7 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface RentalRepository extends JpaRepository<Rentals,Integer> {
-    Optional<Rentals> findByCarId(int carId);
-    Optional<Rentals> findbyId(int id);
 
 }
