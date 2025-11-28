@@ -44,8 +44,7 @@ public class UserServiceImpl implements UserService {
         if (emailExist) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
         }
-        entity.setStatus(Status.NONE);
-        entity.setPassword(passwordEncoder.encode(userDto.getPassword()));
+            entity.setPassword(passwordEncoder.encode(userDto.getPassword()));
         Users saved = userRepository.save(entity);
         return userMapper.toDto(saved);
     }

@@ -31,9 +31,7 @@ public class Users {
     private LocalDateTime creationDate;
     @OneToMany(mappedBy = "user")
     private List<Rentals> rentals = new ArrayList<>();
-    @Column(name = "status")
-    @Enumerated(EnumType.STRING)
-    private Status status;
+
     @Column(name = "username")
     private String username;
 
