@@ -1,8 +1,11 @@
 package com.arn.ycyw.your_car_your_way.controller;
 import com.arn.ycyw.your_car_your_way.dto.UserDto;
+import com.arn.ycyw.your_car_your_way.security.UsersDetailsAdapter;
 import com.arn.ycyw.your_car_your_way.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -49,5 +52,14 @@ public class UserController {
     @DeleteMapping("/delete/{id}")
     public void delete(@PathVariable("id") int id) {
         userService.deleteById(id);
+    }
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal UsersDetailsAdapter principal) {
+        //On recupere l'entité Users depuis l'adapter
+        Integer id = principal.getUser().getId();
+        // on réutilise le service métier qui retoune un UserDto
+        UserDto userDto = userService.findById(id);
+        //et on enveloppe dans un ResponseEntity
+        return ResponseEntity.ok(userDto);
     }
 }
