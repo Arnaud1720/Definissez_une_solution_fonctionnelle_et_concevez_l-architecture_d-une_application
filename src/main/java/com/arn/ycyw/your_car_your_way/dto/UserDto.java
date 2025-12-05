@@ -18,11 +18,11 @@ public class UserDto {
     @Schema(description = "ID généré par le serveur", accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer id;
-    @Schema(description = "Prénom de l'utilisateur", example = "Alice")
+    @Schema(description = "Prénom de l'utilisateur", example = "Arnaud")
 //    @NotBlank(message = "Le prénom est obligatoire")
     @Size(min = 2, max = 20, message = "Votre prénom doit contenir entre 2 et 20 caractères")
     private String firstName;
-    @Schema(description = "Nom de l'utilisateur", example = "Dupont")
+    @Schema(description = "Nom de l'utilisateur", example = "Der")
     @Size(min = 2, max = 20, message = "Votre nom doit contenir entre 2 et 20 caractères")
     private String lastName;
     @Schema(description = "Adresse e-mail", example = "alice@example.com")

@@ -28,7 +28,6 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")))
-                // option : sécurité globale sur tous les endpoints
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName));
     }
 }
