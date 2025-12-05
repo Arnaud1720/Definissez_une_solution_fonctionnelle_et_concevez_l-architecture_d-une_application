@@ -29,4 +29,12 @@ public class JwtServiceImpl {
         return JWT.require(Algorithm.HMAC256(jwtSecret))
                 .build().verify(token).getToken();
     }
+
+    public String extractUsername(String token){
+        return JWT
+                .require(Algorithm.HMAC256(jwtSecret))
+                .build()
+                .verify(token)
+                .getSubject();
+    }
 }

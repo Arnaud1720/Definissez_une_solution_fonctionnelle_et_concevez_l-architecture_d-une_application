@@ -65,5 +65,16 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
+    @Override
+    public UserDto update(UserDto userDto) {
+        // je vais cherche mon user par son id
+        Users user = userRepository.findById(userDto.getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.setEmail(userDto.getEmail());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setLastName(userDto.getLastName());
+        user.setFirstName(userDto.getFirstName());
+        return userMapper.toDto(userRepository.save(user));
+    }
+
 
 }
