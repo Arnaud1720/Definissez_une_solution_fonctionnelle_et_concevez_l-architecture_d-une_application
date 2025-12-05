@@ -1,11 +1,11 @@
 package com.arn.ycyw.your_car_your_way.controller;
 import com.arn.ycyw.your_car_your_way.dto.UserDto;
+import com.arn.ycyw.your_car_your_way.entity.Users;
 import com.arn.ycyw.your_car_your_way.security.UsersDetailsAdapter;
 import com.arn.ycyw.your_car_your_way.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -62,4 +62,16 @@ public class UserController {
         //et on enveloppe dans un ResponseEntity
         return ResponseEntity.ok(userDto);
     }
+
+    @PutMapping("/update")
+    public ResponseEntity<UserDto> update( @AuthenticationPrincipal UsersDetailsAdapter principal,
+                                           @RequestBody UserDto userDto) {
+        Integer currentUserId = principal.getUser().getId();
+        userDto.setId(currentUserId);
+        UserDto updated = userService.update(userDto);
+        return ResponseEntity.ok(updated);
+
+    }
+
+
 }

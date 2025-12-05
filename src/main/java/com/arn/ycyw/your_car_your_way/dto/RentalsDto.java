@@ -23,4 +23,7 @@ public class RentalsDto {
     private Status status;
     private Integer returnAgencyId;
     private Integer userId;
+    private LocalDateTime startDate;
+    private int RefundPercentage;
+
 }

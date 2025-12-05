@@ -1,9 +1,11 @@
 package com.arn.ycyw.your_car_your_way.controller;
 
 import com.arn.ycyw.your_car_your_way.dto.RentalsDto;
+import com.arn.ycyw.your_car_your_way.security.UsersDetailsAdapter;
 import com.arn.ycyw.your_car_your_way.services.RentalService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -42,5 +44,37 @@ public class RantalController {
     public ResponseEntity<RentalsDto> getRantalById(@PathVariable("id") int id) {
         RentalsDto rentalsDto = rentalService.getRentalById(id);
         return ResponseEntity.ok(rentalsDto);
+    }
+
+    @PutMapping("/rentals/{id}")
+    public ResponseEntity<RentalsDto> updateRental(
+            @PathVariable Integer id,
+            @RequestBody RentalsDto dto,
+            @AuthenticationPrincipal UsersDetailsAdapter principal) {
+        // on force l'id depuis l'URL
+        dto.setId(id);
+
+        Integer currentUserId = principal.getUser().getId();
+
+        RentalsDto updated = rentalService.updateRental(dto, currentUserId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/rentals")
+    public ResponseEntity<?> getMyRentals(
+            @AuthenticationPrincipal UsersDetailsAdapter principal) {
+
+        Integer currentUserId = principal.getUser().getId();
+        return ResponseEntity.ok(rentalService.findAllByUserId(currentUserId));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<RentalsDto> cancelRental(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal UsersDetailsAdapter principal) {
+
+        Integer currentUserId = principal.getUser().getId();
+        RentalsDto cancelled = rentalService.cancelRental(id, currentUserId);
+        return ResponseEntity.ok(cancelled);
     }
 }
