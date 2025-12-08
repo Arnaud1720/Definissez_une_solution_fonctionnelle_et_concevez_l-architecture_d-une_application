@@ -23,17 +23,21 @@ public class Rentals {
     @Column(name = "cat_car")
     private String catCar;
 
-    @Column(name = "departure_street")
-    private LocalDateTime departureStreet;
+    @Column(name = "date_de_debut", nullable = false)  // ← Garder l'ancien nom
+    private LocalDateTime startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDateTime endDate;
 
     @Column
     private Integer price;
 
-    @Column(name = "returning_rentals")
-    private String returningRentals;
-
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    @ManyToOne
+    @JoinColumn(name = "departure_agency_id", nullable = false)
+    private Agency departureAgency;
 
     @ManyToOne
     @JoinColumn(name = "return_agency_id", nullable = false)
@@ -42,8 +46,7 @@ public class Rentals {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
-    @Column(name = "date_de_debut", nullable = false)
-    private LocalDateTime startDate;
-    @Column
-    private int RefundPercentage;
+
+    @Column(name = "refund_percentage")
+    private Integer refundPercentage;
 }

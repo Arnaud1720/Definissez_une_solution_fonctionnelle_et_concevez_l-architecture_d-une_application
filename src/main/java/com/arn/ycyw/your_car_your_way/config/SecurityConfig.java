@@ -50,7 +50,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/user/save").permitAll()
+                                "/api/user/save",
+                                "/api/offers/**",
+                                "/api/agency/all",
+                                "/api/agency/{id}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)

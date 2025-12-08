@@ -1,4 +1,5 @@
 package com.arn.ycyw.your_car_your_way.controller;
+import com.arn.ycyw.your_car_your_way.dto.DeleteAccountRequestDto;
 import com.arn.ycyw.your_car_your_way.dto.UserDto;
 import com.arn.ycyw.your_car_your_way.entity.Users;
 import com.arn.ycyw.your_car_your_way.security.UsersDetailsAdapter;
@@ -49,10 +50,20 @@ public class UserController {
         UserDto userDto = userService.findById(id);
         return ResponseEntity.ok(userDto);
     }
-    @DeleteMapping("/delete/{id}")
-    public void delete(@PathVariable("id") int id) {
-        userService.deleteById(id);
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<Map<String, String>> deleteAccount(
+            @AuthenticationPrincipal UsersDetailsAdapter principal,
+            @Valid @RequestBody DeleteAccountRequestDto request) {
+
+        Integer currentUserId = principal.getUser().getId();
+        userService.deleteWithPassword(currentUserId, request.getPassword());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Compte supprimé avec succès");
+        return ResponseEntity.ok(response);
     }
+
     @GetMapping("/me")
     public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal UsersDetailsAdapter principal) {
         //On recupere l'entité Users depuis l'adapter

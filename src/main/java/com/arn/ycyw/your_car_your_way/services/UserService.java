@@ -10,4 +10,6 @@ public interface UserService {
     UserDto findById(int id);
     void deleteById(int id);
     UserDto update(UserDto userDto);
+    void deleteWithPassword(Integer userId, String password);
+
 }

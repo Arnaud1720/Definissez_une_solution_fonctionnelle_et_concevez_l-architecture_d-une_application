@@ -1,4 +1,4 @@
-package com.arn.ycyw.your_car_your_way.config;
+package com.arn.ycyw.your_car_your_way.controller;
 
 import com.stripe.exception.StripeException;
 import org.springframework.web.bind.annotation.CrossOrigin;
