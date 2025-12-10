@@ -215,7 +215,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             footer.setAlignment(Element.ALIGN_CENTER);
             footer.add(new Chunk("Merci pour votre confiance !\n", boldFont));
             footer.add(new Chunk("Cette facture a été générée automatiquement et fait foi.\n", grayFont));
-            footer.add(new Chunk("Pour toute question : support@yourcaryourway.com | +33 1 23 45 67 89", grayFont));
+            footer.add(new Chunk("Pour toute question : support@yourcaryourway.com | +33 1 23 45 67 **", grayFont));
             document.add(footer);
 
             document.close();

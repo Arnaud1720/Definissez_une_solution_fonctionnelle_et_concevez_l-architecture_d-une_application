@@ -7,7 +7,6 @@ import com.arn.ycyw.your_car_your_way.services.RentalService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -31,18 +30,18 @@ public class RantalController {
     @PostMapping("/save")
     public ResponseEntity<Map<String, Object>> saveRantal(@Valid @RequestBody RentalsDto rentalsDto) {
         RentalsDto savedRentalsDto = rentalService.saveRental(rentalsDto);
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(savedRentalsDto.getId())
                 .toUri();
+
         Map<String, Object> body = new HashMap<>();
         body.put("message", "Rental created!");
         body.put("rental", savedRentalsDto);
 
-        return ResponseEntity
-                .created(location)
-                .body(body);
+        return ResponseEntity.created(location).body(body);
     }
 
     /**
@@ -58,7 +57,6 @@ public class RantalController {
     /**
      * Récupérer les réservations de l'utilisateur connecté
      * GET /api/rantals/my
-     * Retourne les réservations avec les agences complètes
      */
     @GetMapping("/my")
     public ResponseEntity<List<RentalResponseDto>> getMyRentals(
@@ -71,8 +69,7 @@ public class RantalController {
     /**
      * Récupérer les réservations par userId
      * GET /api/rantals/user/{userId}
-     * ️ Endpoint utilisé par le frontend
-     * Retourne les réservations avec les agences complètes
+     * ⚠️ Endpoint utilisé par le frontend
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<RentalResponseDto>> getRentalsByUserId(
@@ -107,7 +104,7 @@ public class RantalController {
     /**
      * Annuler une réservation
      * PATCH /api/rantals/{id}/cancel
-     * Retourne la réservation avec les agences complètes
+     * Envoie automatiquement un email de confirmation d'annulation
      */
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<RentalResponseDto> cancelRental(
@@ -117,5 +114,4 @@ public class RantalController {
         RentalResponseDto cancelled = rentalService.cancelRentalWithAgencies(id, currentUserId);
         return ResponseEntity.ok(cancelled);
     }
-
 }

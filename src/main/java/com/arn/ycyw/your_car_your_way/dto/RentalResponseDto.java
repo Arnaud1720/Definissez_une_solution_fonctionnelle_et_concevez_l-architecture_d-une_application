@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RentalResponseDto {
-    
+
     private Integer id;
     private String catCar;
     private LocalDateTime startDate;
@@ -25,6 +25,6 @@ public class RentalResponseDto {
 
     private AgencyDto departureAgency;
     private AgencyDto returnAgency;
-    
+
     private Integer refundPercentage;
 }

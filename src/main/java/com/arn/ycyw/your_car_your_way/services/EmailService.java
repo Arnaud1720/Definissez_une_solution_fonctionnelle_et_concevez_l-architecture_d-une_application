@@ -21,7 +21,13 @@ public interface EmailService {
     );
 
     /**
-     * Envoie un email de confirmation d'annulation
+     * Envoie un email de confirmation d'annulation de réservation
      */
-    void sendCancellationConfirmation(Users user, Rentals rental);
+    void sendCancellationConfirmation(
+            Users user,
+            Rentals rental,
+            Agency departureAgency,
+            Agency returnAgency,
+            int refundPercentage
+    );
 }

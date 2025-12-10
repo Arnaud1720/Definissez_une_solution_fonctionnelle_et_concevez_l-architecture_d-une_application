@@ -11,6 +11,7 @@ import com.arn.ycyw.your_car_your_way.mapper.RentalsMapper;
 import com.arn.ycyw.your_car_your_way.reposiory.AgencyRepository;
 import com.arn.ycyw.your_car_your_way.reposiory.RentalRepository;
 import com.arn.ycyw.your_car_your_way.reposiory.UserRepository;
+import com.arn.ycyw.your_car_your_way.services.EmailService;
 import com.arn.ycyw.your_car_your_way.services.RentalService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -23,17 +24,24 @@ import java.util.List;
 @Service
 @Transactional
 public class RantalServiceImpl implements RentalService {
+
+
     private final RentalRepository rentalRepository;
     private final RentalsMapper rentalsMapper;
     private final UserRepository userRepository;
     private final AgencyRepository agencyRepository;
+    private final EmailService emailService;
 
-    public RantalServiceImpl(RentalRepository rentalRepository, RentalsMapper rentalsMapper,
-                             UserRepository userRepository, AgencyRepository agencyRepository) {
+    public RantalServiceImpl(RentalRepository rentalRepository,
+                             RentalsMapper rentalsMapper,
+                             UserRepository userRepository,
+                             AgencyRepository agencyRepository,
+                             EmailService emailService) {
         this.rentalRepository = rentalRepository;
         this.rentalsMapper = rentalsMapper;
         this.userRepository = userRepository;
         this.agencyRepository = agencyRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -45,34 +53,24 @@ public class RantalServiceImpl implements RentalService {
 
     @Override
     public RentalsDto saveRental(RentalsDto rentalsDto) {
-        // Pour être sûr qu'on fait une création
         rentalsDto.setId(null);
 
-        // 1. Récupérer le User
         Users user = userRepository.findById(rentalsDto.getUserId())
                 .orElseThrow(() -> new BusinessException("Utilisateur non trouvé"));
 
-        // 2. Récupérer l'agence de départ
         Agency departureAgency = agencyRepository.findById(rentalsDto.getDepartureAgencyId())
                 .orElseThrow(() -> new BusinessException("Agence de départ non trouvée"));
 
-        // 3. Récupérer l'agence de retour
         Agency returnAgency = agencyRepository.findById(rentalsDto.getReturnAgencyId())
                 .orElseThrow(() -> new BusinessException("Agence de retour non trouvée"));
 
-        // 4. Mapper le reste du DTO vers l'entité
         Rentals rentals = rentalsMapper.toEntity(rentalsDto);
-
-        // 5. Rattacher les relations
         rentals.setStatus(Status.BOOKED);
         rentals.setUser(user);
         rentals.setDepartureAgency(departureAgency);
         rentals.setReturnAgency(returnAgency);
 
-        // 6. Sauvegarder
         Rentals saved = rentalRepository.save(rentals);
-
-        // 7. Retourner un DTO
         return rentalsMapper.toDto(saved);
     }
 
@@ -92,6 +90,14 @@ public class RantalServiceImpl implements RentalService {
     }
 
     @Override
+    public List<RentalResponseDto> findAllByUserIdWithAgencies(Integer userId) {
+        List<Rentals> rentals = rentalRepository.findAllByUser_Id(userId);
+        return rentals.stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    @Override
     public RentalsDto cancelRental(Integer id, Integer currentUserId) {
         Rentals rental = rentalRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Location introuvable"));
@@ -104,24 +110,14 @@ public class RantalServiceImpl implements RentalService {
         rental.setStatus(Status.CANCELLED);
         rental.setRefundPercentage(refund);
 
-        return rentalsMapper.toDto(rentalRepository.save(rental));
+        Rentals saved = rentalRepository.save(rental);
+
+        // ✉️ Envoyer l'email d'annulation
+        sendCancellationEmail(saved);
+
+        return rentalsMapper.toDto(saved);
     }
 
-    /**
-     * Récupère toutes les réservations d'un utilisateur avec les agences complètes
-     * C'est cette méthode que le frontend utilise pour afficher les réservations
-     */
-    @Override
-    public List<RentalResponseDto> findAllByUserIdWithAgencies(Integer userId) {
-        List<Rentals> rentals = rentalRepository.findAllByUser_Id(userId);
-        return rentals.stream()
-                .map(this::toResponseDto)
-                .toList();
-    }
-
-    /**
-     * Annule une réservation et retourne la réponse avec les agences complètes
-     */
     @Override
     public RentalResponseDto cancelRentalWithAgencies(Integer id, Integer currentUserId) {
         Rentals rental = rentalRepository.findById(id)
@@ -136,12 +132,80 @@ public class RantalServiceImpl implements RentalService {
         rental.setRefundPercentage(refund);
 
         Rentals saved = rentalRepository.save(rental);
+
+        // ️ Envoyer l'email d'annulation
+        sendCancellationEmail(saved);
+
         return toResponseDto(saved);
     }
 
     /**
-     * Convertit une entité Rentals en RentalResponseDto avec les agences complètes
+     * Envoie l'email de confirmation d'annulation
      */
+    private void sendCancellationEmail(Rentals rental) {
+        try {
+            Users user = rental.getUser();
+            Agency departureAgency = rental.getDepartureAgency();
+            Agency returnAgency = rental.getReturnAgency();
+            int refundPercentage = rental.getRefundPercentage() != null ? rental.getRefundPercentage() : 0;
+
+            System.out.println("📧 Envoi de l'email d'annulation pour la réservation #" + rental.getId());
+
+            emailService.sendCancellationConfirmation(
+                    user,
+                    rental,
+                    departureAgency,
+                    returnAgency,
+                    refundPercentage
+            );
+
+            System.out.println("✅ Email d'annulation envoyé pour la réservation #" + rental.getId());
+
+        } catch (Exception e) {
+            System.out.println("❌ Erreur lors de l'envoi de l'email d'annulation : " + e.getMessage());
+            e.printStackTrace();
+            // On ne relance pas l'exception pour ne pas bloquer l'annulation
+        }
+    }
+
+    @Override
+    public void delete(RentalsDto rentalsDto) {
+        rentalRepository.delete(rentalsMapper.toEntity(rentalsDto));
+    }
+
+    @Override
+    public RentalsDto updateRental(RentalsDto rentalsDto, Integer currentUserId) {
+        Rentals rental = rentalRepository.findById(rentalsDto.getId())
+                .orElseThrow(() -> new BusinessException("Location non trouvée"));
+
+        if (!rental.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Vous ne pouvez modifier que vos propres réservations");
+        }
+        checkCanModify(rental);
+
+        rental.setCatCar(rentalsDto.getCatCar());
+        rental.setStartDate(rentalsDto.getStartDate());
+        rental.setEndDate(rentalsDto.getEndDate());
+        rental.setPrice(rentalsDto.getPrice());
+
+        if (rentalsDto.getDepartureAgencyId() != null) {
+            Agency departureAgency = agencyRepository.findById(rentalsDto.getDepartureAgencyId())
+                    .orElseThrow(() -> new BusinessException("Agence de départ non trouvée"));
+            rental.setDepartureAgency(departureAgency);
+        }
+
+        if (rentalsDto.getReturnAgencyId() != null) {
+            Agency returnAgency = agencyRepository.findById(rentalsDto.getReturnAgencyId())
+                    .orElseThrow(() -> new BusinessException("Agence de retour non trouvée"));
+            rental.setReturnAgency(returnAgency);
+        }
+
+        Rentals saved = rentalRepository.save(rental);
+        return rentalsMapper.toDto(saved);
+    }
+
+    // ===== MÉTHODES PRIVÉES =====
+
     private RentalResponseDto toResponseDto(Rentals rental) {
         RentalResponseDto dto = new RentalResponseDto();
         dto.setId(rental.getId());
@@ -152,7 +216,6 @@ public class RantalServiceImpl implements RentalService {
         dto.setStatus(rental.getStatus());
         dto.setRefundPercentage(rental.getRefundPercentage());
 
-        // Mapper les agences complètes
         if (rental.getDepartureAgency() != null) {
             dto.setDepartureAgency(toAgencyDto(rental.getDepartureAgency()));
         }
@@ -163,9 +226,6 @@ public class RantalServiceImpl implements RentalService {
         return dto;
     }
 
-    /**
-     * Convertit une Agency en AgencyDto
-     */
     private AgencyDto toAgencyDto(Agency agency) {
         AgencyDto dto = new AgencyDto();
         dto.setId(agency.getId());
@@ -177,47 +237,6 @@ public class RantalServiceImpl implements RentalService {
         dto.setPhone(agency.getPhone());
         dto.setEmail(agency.getEmail());
         return dto;
-    }
-
-    @Override
-    public void delete(RentalsDto rentalsDto) {
-        rentalRepository.delete(rentalsMapper.toEntity(rentalsDto));
-    }
-
-    @Override
-    public RentalsDto updateRental(RentalsDto rentalsDto, Integer currentUserId) {
-        // 1. On récupère la rental à partir de son ID
-        Rentals rental = rentalRepository.findById(rentalsDto.getId())
-                .orElseThrow(() -> new BusinessException("Location non trouvée"));
-
-        // vérifier que c'est bien la réservation du user courant
-        if (!rental.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("Vous ne pouvez modifier que vos propres réservations");
-        }
-        checkCanModify(rental);
-
-        // 3. Mettre à jour les champs modifiables
-        rental.setCatCar(rentalsDto.getCatCar());
-        rental.setStartDate(rentalsDto.getStartDate());
-        rental.setEndDate(rentalsDto.getEndDate());
-        rental.setPrice(rentalsDto.getPrice());
-
-        // 4. Gérer l'agence de départ si l'ID est fourni
-        if (rentalsDto.getDepartureAgencyId() != null) {
-            Agency departureAgency = agencyRepository.findById(rentalsDto.getDepartureAgencyId())
-                    .orElseThrow(() -> new BusinessException("Agence de départ non trouvée"));
-            rental.setDepartureAgency(departureAgency);
-        }
-
-        // 5. Gérer l'agence de retour si l'ID est fourni
-        if (rentalsDto.getReturnAgencyId() != null) {
-            Agency returnAgency = agencyRepository.findById(rentalsDto.getReturnAgencyId())
-                    .orElseThrow(() -> new BusinessException("Agence de retour non trouvée"));
-            rental.setReturnAgency(returnAgency);
-        }
-
-        Rentals saved = rentalRepository.save(rental);
-        return rentalsMapper.toDto(saved);
     }
 
     private void checkCanModify(Rentals rental) {
@@ -238,11 +257,9 @@ public class RantalServiceImpl implements RentalService {
         long daysBeforeStart = ChronoUnit.DAYS.between(now.toLocalDate(), start.toLocalDate());
 
         if (daysBeforeStart < 7) {
-            return 25; // 25 % remboursé
+            return 25;
         } else {
-            return 100; // 100 % remboursé
+            return 100;
         }
     }
-
-
 }
