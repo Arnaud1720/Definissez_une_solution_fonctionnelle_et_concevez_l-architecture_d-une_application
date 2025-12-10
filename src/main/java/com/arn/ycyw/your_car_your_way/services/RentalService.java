@@ -1,5 +1,6 @@
 package com.arn.ycyw.your_car_your_way.services;
 
+import com.arn.ycyw.your_car_your_way.dto.RentalResponseDto;
 import com.arn.ycyw.your_car_your_way.dto.RentalsDto;
 import com.arn.ycyw.your_car_your_way.entity.Rentals;
 
@@ -13,4 +14,15 @@ public interface RentalService {
     RentalsDto getRentalById(int id);
     List<RentalsDto> findAllByUserId(Integer userId);
     RentalsDto cancelRental(Integer id, Integer currentUserId);
+
+    /**
+     * Récupère toutes les réservations d'un utilisateur avec les agences complètes
+     * C'est cette méthode que le frontend utilise pour afficher les réservations
+     */
+    List<RentalResponseDto> findAllByUserIdWithAgencies(Integer userId);
+
+    /**
+     * Annule une réservation et retourne la réponse avec les agences complètes
+     */
+    RentalResponseDto cancelRentalWithAgencies(Integer id, Integer currentUserId);
 }

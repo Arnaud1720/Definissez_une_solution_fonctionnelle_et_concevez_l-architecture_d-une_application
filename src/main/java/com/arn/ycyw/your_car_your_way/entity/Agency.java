@@ -19,15 +19,30 @@ public class Agency {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(length = 50, nullable = false)
+    @Column(length = 100, nullable = false)
     private String name;
 
     @Column(length = 255)
     private String address;
 
-    @Column(length = 255)
+    @Column(length = 100, nullable = false)
     private String city;
 
+    @Column(length = 100, nullable = false)
+    private String country;
+
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column(length = 100)
+    private String email;
+
+    @OneToMany(mappedBy = "departureAgency")
+    private List<Rentals> departureRentals = new ArrayList<>();
+
     @OneToMany(mappedBy = "returnAgency")
-    private List<Rentals> rentals = new ArrayList<>();
+    private List<Rentals> returnRentals = new ArrayList<>();
 }

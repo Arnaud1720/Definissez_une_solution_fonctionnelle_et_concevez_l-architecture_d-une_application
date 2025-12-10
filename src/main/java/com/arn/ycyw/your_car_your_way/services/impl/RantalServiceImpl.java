@@ -1,4 +1,6 @@
 package com.arn.ycyw.your_car_your_way.services.impl;
+import com.arn.ycyw.your_car_your_way.dto.AgencyDto;
+import com.arn.ycyw.your_car_your_way.dto.RentalResponseDto;
 import com.arn.ycyw.your_car_your_way.dto.RentalsDto;
 import com.arn.ycyw.your_car_your_way.entity.Agency;
 import com.arn.ycyw.your_car_your_way.entity.Rentals;
@@ -105,6 +107,78 @@ public class RantalServiceImpl implements RentalService {
         return rentalsMapper.toDto(rentalRepository.save(rental));
     }
 
+    /**
+     * Récupère toutes les réservations d'un utilisateur avec les agences complètes
+     * C'est cette méthode que le frontend utilise pour afficher les réservations
+     */
+    @Override
+    public List<RentalResponseDto> findAllByUserIdWithAgencies(Integer userId) {
+        List<Rentals> rentals = rentalRepository.findAllByUser_Id(userId);
+        return rentals.stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
+
+    /**
+     * Annule une réservation et retourne la réponse avec les agences complètes
+     */
+    @Override
+    public RentalResponseDto cancelRentalWithAgencies(Integer id, Integer currentUserId) {
+        Rentals rental = rentalRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Location introuvable"));
+
+        if (!rental.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Vous ne pouvez annuler que vos propres réservations");
+        }
+
+        int refund = computeRefundPercentage(rental);
+        rental.setStatus(Status.CANCELLED);
+        rental.setRefundPercentage(refund);
+
+        Rentals saved = rentalRepository.save(rental);
+        return toResponseDto(saved);
+    }
+
+    /**
+     * Convertit une entité Rentals en RentalResponseDto avec les agences complètes
+     */
+    private RentalResponseDto toResponseDto(Rentals rental) {
+        RentalResponseDto dto = new RentalResponseDto();
+        dto.setId(rental.getId());
+        dto.setCatCar(rental.getCatCar());
+        dto.setStartDate(rental.getStartDate());
+        dto.setEndDate(rental.getEndDate());
+        dto.setPrice(rental.getPrice());
+        dto.setStatus(rental.getStatus());
+        dto.setRefundPercentage(rental.getRefundPercentage());
+
+        // Mapper les agences complètes
+        if (rental.getDepartureAgency() != null) {
+            dto.setDepartureAgency(toAgencyDto(rental.getDepartureAgency()));
+        }
+        if (rental.getReturnAgency() != null) {
+            dto.setReturnAgency(toAgencyDto(rental.getReturnAgency()));
+        }
+
+        return dto;
+    }
+
+    /**
+     * Convertit une Agency en AgencyDto
+     */
+    private AgencyDto toAgencyDto(Agency agency) {
+        AgencyDto dto = new AgencyDto();
+        dto.setId(agency.getId());
+        dto.setName(agency.getName());
+        dto.setAddress(agency.getAddress());
+        dto.setCity(agency.getCity());
+        dto.setCountry(agency.getCountry());
+        dto.setPostalCode(agency.getPostalCode());
+        dto.setPhone(agency.getPhone());
+        dto.setEmail(agency.getEmail());
+        return dto;
+    }
+
     @Override
     public void delete(RentalsDto rentalsDto) {
         rentalRepository.delete(rentalsMapper.toEntity(rentalsDto));
@@ -169,4 +243,6 @@ public class RantalServiceImpl implements RentalService {
             return 100; // 100 % remboursé
         }
     }
+
+
 }

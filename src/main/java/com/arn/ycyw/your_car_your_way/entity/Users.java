@@ -35,5 +35,8 @@ public class Users {
     @Column(name = "username")
     private String username;
 
+    public String getAddress() {
+        return null;
+    }
 }
 

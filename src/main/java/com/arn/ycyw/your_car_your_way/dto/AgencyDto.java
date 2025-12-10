@@ -12,4 +12,8 @@ public class AgencyDto {
     private String name;
     private String address;
     private String city;
+    private String country;
+    private String postalCode;
+    private String phone;
+    private String email;
 }
